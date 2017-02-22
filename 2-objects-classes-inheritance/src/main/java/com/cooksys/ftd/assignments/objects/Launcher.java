@@ -10,9 +10,9 @@ public class Launcher {
 		//Rational r1 = new Rational(24,12);
 		//Rational r2 = new Rational(2,1);
 		
-		/*
-		 * sr2.invert() throws IllegalArgumentException from gcd method 
-		* before it can execute invert(), where it would otherwise
+		/**/
+		sr2.invert();// throws IllegalArgumentException from gcd method 
+		/* before it can execute invert(), where it would otherwise
 		* throw IllegalStateException because numerator becoming denominator
 		* would be 0. This causes the final test from the simplifiedrational
 		* test suite to fail.

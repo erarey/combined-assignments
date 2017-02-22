@@ -79,6 +79,7 @@ public class SimplifiedRational implements IRational {
 		}
 		
 		//if (numerator < 0 && denominator < 0) ;
+		if (numerator == 0) return new int[]{0,denominator};
 		
 		int gcd = gcd(Math.abs(numerator), Math.abs(denominator));
 
