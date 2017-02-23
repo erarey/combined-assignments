@@ -13,7 +13,7 @@ public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
 	
 	//public static HashSet<FatCat> known_fatCats = new HashSet<>();
 	
-	public Map<FatCat, Set<Capitalist>> cats = new HashMap<>();
+	private Map<FatCat, Set<Capitalist>> cats = new HashMap<>();
 	
 	public  ArrayList<FatCat> lonely_cats = new ArrayList<>();
 	//public static ArrayList<Capitalist> capitalists = new ArrayList<>();
@@ -49,74 +49,44 @@ public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
     public boolean add(Capitalist capitalist) {
     	if (capitalist == null) return false;
     	
-        if (cats.keySet().contains(capitalist))
+        //if keyset contains cap , return false
+        
+        if (capitalist instanceof FatCat && cats.keySet().contains(capitalist))
+        //if (cats.keySet().contains(capitalist))
         {
+        	System.out.println("57: return false, cap was a fatcat inside keyset");
         	return false;
         }
         
-        if (!(capitalist instanceof FatCat) && !capitalist.hasParent()) return false;
-        
-        //experimental
-        if (capitalist instanceof FatCat 
-        		&& !cats.containsKey(capitalist)) 
-        {
-        	lonely_cats.add((FatCat) capitalist);
-        }
-        //end
-        	
         if (capitalist.hasParent())// && cats.keySet().contains(capitalist))
         {
-        	Capitalist iter = capitalist;
-        	
-        	while (iter.hasParent())
+
+        	if (cats.keySet().contains(capitalist.getParent()))
         	{
-        		if (!cats.keySet().contains(iter))
-        		{
-        			cats.put((FatCat) iter.getParent(), new HashSet<>());
-        		}
+        		cats.get(capitalist.getParent()).add(capitalist);
+        		return true;
         		
-        		cats.get(iter.getParent()).add(iter);
+        	}
+        	else //capitalist has parent and parent is not in map keys
+        	{
+        		System.out.println("capitalist has parent, parent not in map keys");
         		
-        		//if (success)
-        		//{
+        		if (!add(capitalist.getParent())) return false;
         		
-        		//}
-        		//else
-        		//{
-        		//could not add iter's parent, were they already in the hierarchy?
-        		//if (cats.containsKey(iter.getParent()))
-        		//{
-        			//cats.get(iter.getParent()).add(iter);
-        		//}
-        		//was there parent a childless fat cat without an owner (lonely_cat)?
-        		if (lonely_cats.contains(iter.getParent()))
-        		{
-        			if (!cats.keySet().contains(iter.getParent()))
-        			{
-        				cats.put(iter.getParent(), new HashSet<>());
-        				cats.get(iter.getParent()).add(iter);
-        				lonely_cats.remove(iter.getParent());
-        			}
-        			else
-        			{
-        				//lonely_cats.remove(iter.getParent());
-        			}
-        		}
-        		//}
-        		add(iter.getParent());
+        		if (cats.keySet().contains(capitalist))
+                {
+                	return false;
+                }
         		
-        		iter = iter.getParent();
+        		if (capitalist instanceof FatCat)
+        			cats.put((FatCat)capitalist, new HashSet<>());
+        		
+        		//if (getChildren(capitalist))
+        		cats.get(capitalist.getParent()).add(capitalist);
+        		return true;
         	}
         	
-        	//capitalists.add(capitalist);
-        	
-        	//add(capitalist.getParent());
-        	
-        	//capitalists.add(capitalist);
-        	
-        	//add(capitalist.getParent());
-        		
-        } 
+        }
         else if (capitalist.hasParent() == false)
         {
         	if (capitalist instanceof FatCat)
@@ -124,8 +94,41 @@ public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
         		//No need to check for children since they are not already in the hierarchy
         		
         		//might be ownerless cat that nonetheless has children we don't know about;
-        		lonely_cats.add((FatCat)capitalist);
+        		
+        		if (cats.keySet().contains(capitalist))
+                {
+                	return false;
+                }
+        		
+        		//lonely_cats.add((FatCat)capitalist); 
+        		
+        		System.out.println("cap with no parent is a FatCat");
+
+        		cats.put((FatCat) capitalist, new HashSet<>());
         	}
+        	else
+        	{
+        		return false;
+        	}
+        		if (!(capitalist instanceof FatCat)) 
+        		{System.out.println("Searching if WageSlave is child of someone already in hier");}
+        		else { System.out.println("Searching if FatCat is child of someone already in hier");}
+        	
+        		Set<Capitalist> caps = getElements();
+        	
+        		for (Capitalist c : caps)
+        		{
+        			if (c.getParent().equals(capitalist) && c.getParent() != null)
+        			{
+        				//give capitalist their children
+        				cats.put((FatCat) capitalist, new HashSet<>());
+        				cats.get(capitalist).add(c);
+        				return true;
+        			}
+        	
+        		}
+        		return false;
+        
         			
         	
         	//Set<Capitalist> children = getChildren((FatCat)capitalist);
@@ -137,16 +140,18 @@ public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
         	//{
         	//capitalists.add(capitalist);
         		
-        	return false;
+        	
         	//}
         	//else 
         	//{
         		//a wage slave with no owner cannot be connected to the network
         		//return false;
         	//}
+        	 
         }
         
         //what condition is left?
+        System.out.println("default 'false' fired");
         return false;
     }
 
@@ -156,24 +161,27 @@ public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
      */
     @Override
     public boolean has(Capitalist capitalist) {
+    	
+    	return getElements().contains(capitalist);
+
     	//if (capitalists.contains(capitalist)){ return true;}
     	//else {return false;}
-    	if (cats.containsKey(capitalist))
-    	{
-    		return true;
-    	}
-    	Set<FatCat> fatCats = getParents();
+    	//if (cats.containsKey(capitalist))
+    	//{
+    		//return true;
+    	//}
+    	//Set<FatCat> fatCats = getParents();
     	
-    	for (FatCat cat : fatCats)
-    	{
-    		Set<Capitalist> c = getChildren(cat);
-    		if (c.contains(capitalist)) return true;
+    	//for (FatCat cat : fatCats)
+    	//{
+    		//Set<Capitalist> c = getChildren(cat);
+    		//if (c.contains(capitalist)) return true;
     		
-    	}
+    	//}
     	
     	//handle lonely_cats?
     	
-    	return false;
+    	//return false;
     	
         //Set<Capitalist> all_elements = getElements();
         /*
@@ -226,7 +234,21 @@ public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
     	
     	Set<FatCat> parents = new HashSet<>();
     	
-    	parents = cats.keySet();
+    	parents.clear();
+    	
+    	System.out.println(parents.isEmpty());
+    	
+    	for (FatCat cat : cats.keySet())
+    	{
+    		if (cat.hasParent() == false)
+    		{
+    			continue;
+    		}
+    		System.out.println("getParents: Parent found!");
+    		parents.add(cat.getParent());
+    	}
+    	
+    	//parents = cats.keySet();
     	
     	/*
         for (Capitalist c : capitalists)
@@ -280,8 +302,10 @@ public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
      */
     @Override
     public Map<FatCat, Set<Capitalist>> getHierarchy() {
-        
-    	return cats;
+    	//if (cats.keySet().isEmpty()) return new;
+    	
+        HashMap<FatCat, Set<Capitalist>> h = new HashMap<FatCat, Set<Capitalist>>(cats);
+        return h;
     	
     	/*
     	//System.out.println("test");
