@@ -6,7 +6,17 @@ import com.cooksys.ftd.assignments.file.model.Session;
 import com.cooksys.ftd.assignments.file.model.Student;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Main {
@@ -20,8 +30,18 @@ public class Main {
      * @param jaxb the JAXB context to use
      * @return a {@link Student} object built using the {@link Contact} data in the given file
      */
-    public static Student readStudent(File studentContactFile, JAXBContext jaxb) {
-        return null; // TODO
+    public static Student readStudent(File studentContactFile, JAXBContext jaxb) throws JAXBException{
+        if (studentContactFile == null) return null;
+        if (jaxb == null) return null;
+        
+        Unmarshaller unmarshaller = jaxb.createUnmarshaller();
+        	
+        Contact contactdata = (Contact) unmarshaller.unmarshal(studentContactFile);
+        
+        System.out.println(contactdata.getFirstName() + " " + contactdata.getLastName());
+        
+        return new Student(contactdata);
+        
     }
 
     /**
@@ -32,7 +52,54 @@ public class Main {
      * @return a list of {@link Student} objects built using the contact files in the given directory
      */
     public static List<Student> readStudents(File studentDirectory, JAXBContext jaxb) {
-        return null; // TODO
+        try
+        {
+        	if (studentDirectory.toString().isEmpty() || studentDirectory == null) return new ArrayList<>(null);
+        	if (jaxb == null) return null;
+        	
+        	ArrayList<File> file_list = new ArrayList<>(Arrays.asList(studentDirectory.listFiles()));
+        	
+        
+        	Unmarshaller unmarshaller = jaxb.createUnmarshaller();
+        	
+        	for (File f : file_list)
+        	{
+        		//if the file doesn't contain @XmlRootElement, skip it
+        		FileReader reader = new FileReader(f);
+        	    BufferedReader buffReader = new BufferedReader(reader);
+        		
+        	    boolean confirmed_file_has_rootelement = false;
+        	    String currentLine = "not null";
+        	    while (confirmed_file_has_rootelement == false && currentLine == null)
+        	    {
+        	    	currentLine = buffReader.readLine();
+        	    	if (currentLine.contains("@XmlRootElement")) 
+        	    	{
+        	    		
+        	    		confirmed_file_has_rootelement = true;
+        	    	
+        	    		System.out.println("File had a root element!");
+        	    	}
+        	    }
+        	    if (confirmed_file_has_rootelement == false)
+        	    {
+        	    	System.out.println("File: no root element found.");
+        	    	continue;
+        	    }
+        	    
+        	}
+        } 
+        catch (JAXBException e)
+        {
+        	
+        } 
+        catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     /**
