@@ -8,9 +8,8 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import java.util.*;
 
 public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
-	// public static Set<Set<Capitalist>>
 
-	public HashSet<Capitalist> cats = new HashSet<>();
+	private HashSet<Capitalist> cats = new HashSet<>();
 
 	/**
 	 * Adds a given element to the hierarchy.
@@ -35,10 +34,10 @@ public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
 	@Override
 	public boolean add(Capitalist capitalist) {
 		if (capitalist == null) {
-			System.out.println("53");
+			
 			return false;
 		} else if (cats.contains(capitalist)) {
-			System.out.println("58");
+			
 			return false;
 		}
 
@@ -55,26 +54,19 @@ public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
 			} else {
 				cats.add(capitalist);
 
-				System.out.println("HasParent, add of Parent returned false");
-				// if (capitalist instanceof FatCat)
-				// {
-				// cats.add(capitalist);
-				// return true;
-				// }
 				return true;
 			}
 
 		} else if (!capitalist.hasParent()) {
 			if (capitalist instanceof FatCat) {
-				System.out.println("75");
+				
 				cats.add(capitalist);
 				return true;
 			}
-			System.out.println("Parentless, Childless FatCat!");
+			
 			return false;
 
 		}
-		System.out.println("default return used");
 		return false;
 
 	}
@@ -169,16 +161,7 @@ public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
 	@Override
 	public Map<FatCat, Set<Capitalist>> getHierarchy() {
 
-		// if (cats.keySet().isEmpty()) return new;
-
-		// HashMap<FatCat, Set<Capitalist>> h = new HashMap<FatCat,
-		// Set<Capitalist>>(cats);
-		// return h;
-
-		// System.out.println("test");
 		Map<FatCat, Set<Capitalist>> hmap = new HashMap<>();
-
-		// Set<Capitalist> all_children = new HashSet<>();
 
 		if (cats.isEmpty())
 			return hmap;
@@ -193,11 +176,6 @@ public class MegaCorp implements Hierarchy<Capitalist, FatCat> {
 			}
 
 		}
-
-		// Capitalist[] c_array;
-		// c_array = (Capitalist[]) capitalists.toArray();
-
-		// Set<FatCat> hs = getChildren();
 
 		return hmap;
 	}
