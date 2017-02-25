@@ -1,18 +1,34 @@
 package com.cooksys.ftd.assignments.file.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.*;
 
 @XmlRootElement
-@XmlType(propOrder = {"location", "startDate", "instructor", "students"})
+@XmlAccessorType(XmlAccessType.FIELD)
+
+//@XmlType(propOrder = {"location", "startDate", "instructor", "students"})
 public class Session {
+	@XmlAttribute
     private String location;
+	@XmlAttribute(name = "start-date")
     private String startDate;
+	
     private Instructor instructor;
+    @XmlElementWrapper(name = "students")
+    @XmlElement(name = "student")
     private List<Student> students;
     
-@XmlElement
+    
+    public Session()
+    {
+    	students = new ArrayList<>();
+    }
+    
+    
+    
+//@XmlElement
     public String getLocation() {
         return location;
     }
@@ -20,7 +36,7 @@ public class Session {
     public void setLocation(String location) {
         this.location = location;
     }
-@XmlElement
+//@XmlElement
     public String getStartDate() {
         return startDate;
     }
@@ -28,7 +44,7 @@ public class Session {
     public void setStartDate(String startDate) {
         this.startDate = startDate;
     }
-@XmlElement
+//@XmlElement
     public Instructor getInstructor() {
         return instructor;
     }
@@ -36,7 +52,7 @@ public class Session {
     public void setInstructor(Instructor instructor) {
         this.instructor = instructor;
     }
-@XmlElement
+//@XmlElement
     public List<Student> getStudents() {
         return students;
     }

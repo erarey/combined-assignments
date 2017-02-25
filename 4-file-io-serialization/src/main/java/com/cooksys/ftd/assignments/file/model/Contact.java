@@ -4,17 +4,22 @@ import java.io.Serializable;
 
 import javax.xml.bind.annotation.*;
 
-@XmlRootElement
+@XmlRootElement(name = "contact") 
 @XmlType(propOrder = {"firstName","lastName","email","phoneNumber"})
-
-public class Contact { //implements Serializable{
+@XmlAccessorType(XmlAccessType.FIELD)
+public class Contact {
 	
+	@XmlAttribute(name = "first-name")
     private String firstName;
+	
+	@XmlAttribute(name = "last-name")
     private String lastName;
+	
     private String email;
+    
     private String phoneNumber;
     
-    @XmlElement
+    //@XmlElement
     public String getFirstName() {
         return firstName;
     }
@@ -22,7 +27,7 @@ public class Contact { //implements Serializable{
     public void setFirstName(String firstName) {
         this.firstName = firstName;
     }
-    @XmlElement
+    //@XmlElement
     public String getLastName() {
         return lastName;
     }
@@ -30,7 +35,7 @@ public class Contact { //implements Serializable{
     public void setLastName(String lastName) {
         this.lastName = lastName;
     }
-    @XmlElement
+    //@XmlElement
     public String getEmail() {
         return email;
     }
@@ -38,7 +43,7 @@ public class Contact { //implements Serializable{
     public void setEmail(String email) {
         this.email = email;
     }
-    @XmlElement
+    //@XmlElement
     public String getPhoneNumber() {
         return phoneNumber;
     }
