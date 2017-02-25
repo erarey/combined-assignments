@@ -1,8 +1,12 @@
 package com.cooksys.ftd.assignments.socket;
 
+import com.cooksys.ftd.assignments.socket.model.Config;
+import com.cooksys.ftd.assignments.socket.model.LocalConfig;
+import com.cooksys.ftd.assignments.socket.model.RemoteConfig;
 import com.cooksys.ftd.assignments.socket.model.Student;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 
 public class Server extends Utils {
 
@@ -30,6 +34,18 @@ public class Server extends Utils {
      * Following this transaction, the server may shut down or listen for more connections.
      */
     public static void main(String[] args) {
-        // TODO
+        Config config = new Config();
+        config.setStudentFilePath("./config/config.xml");
+        config.setLocal(new LocalConfig());
+        config.setRemote(new RemoteConfig());
+        
+        Student student = new Student();
+        student.setFavoriteIDE("Eclipse");
+        student.setFavoriteLanguage("Java");
+        student.setFavoriteParadigm("Any pair of dimes is as valuable as any other");
+        student.setFirstName("Eli");
+        student.setLastName("Rarey");
+        
+        
     }
 }
