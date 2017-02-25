@@ -40,8 +40,9 @@ public class Main {
 		if (chars.length == 10 
 				&& (chars[0] == '0' || chars[0] == '1') 
 				&& (Character.isDigit(chars[1]))
-				&& (chars[2] == '-') 
-				&& (chars[3] == '0' || chars[3] == '1') 
+				&& (chars[2] == '-')
+				&& (chars[3] > 47 && chars[3] < 52)
+				//&& (chars[3] == '0' || chars[3] == '1' || chars[3] == '2' || chars[3] == '3') 
 				&& (Character.isDigit(chars[4]))
 				&& (chars[5] == '-') 
 				&& (Character.isDigit(chars[6])) && (Character.isDigit(chars[7]))
