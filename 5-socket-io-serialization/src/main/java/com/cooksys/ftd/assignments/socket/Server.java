@@ -25,7 +25,6 @@ import javax.xml.bind.Unmarshaller;
 public class Server extends Utils {
 
 
-	public static final String CONFIG_FILE_PATH = "./config/config.xml";
 	//public static final String STUDENT_FILE_PATH = "./config/student.xml";
 
 
@@ -65,7 +64,7 @@ public class Server extends Utils {
         {
         	JAXBContext context = Utils.createJAXBContext();
         	
-        	Config config = Utils.loadConfig(CONFIG_FILE_PATH, context);
+        	Config config = Utils.loadConfig(Utils.CONFIG_FILE_PATH, context);
         	
         	Integer port = config.getLocal().getPort();
         	
@@ -80,9 +79,23 @@ public class Server extends Utils {
         	
         	Unmarshaller unmarshaller = context.createUnmarshaller();
         	
-        	Student student = (Student)unmarshaller.unmarshal(in);
+        	Student student = (Student)unmarshaller.unmarshal(Paths.get(config.getStudentFilePath()).toFile());
         	
-        	System.out.println(student.getFavoriteIDE());
+        	Marshaller marshaller = context.createMarshaller();
+        	
+        	marshaller.marshal(student, out);
+        	
+        	while (client.isConnected())
+        	{
+        		System.out.println("| still connected |");
+        		
+        		Thread.sleep(1000);
+        		
+        	}
+        	
+        	client.close();
+        	
+        	//System.out.println(student.getFavoriteIDE());
         	
         	//DataInputStream in = new DataInputStream(client.getInputStream());
         	

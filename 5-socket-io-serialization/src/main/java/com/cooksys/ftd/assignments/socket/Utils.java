@@ -14,9 +14,12 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 /**
- * Shared static methods to be used by both the {@link Client} and {@link Server} classes.
+ * Shared static methods and constants to be used by both the {@link Client} and {@link Server} classes.
  */
 public class Utils {
+	
+	public static final String CONFIG_FILE_PATH = "./config/config.xml";
+
     /**
      * @return a {@link JAXBContext} initialized with the classes in the
      * com.cooksys.socket.assignment.model package

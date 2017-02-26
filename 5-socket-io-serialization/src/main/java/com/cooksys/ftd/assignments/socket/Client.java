@@ -1,5 +1,15 @@
 package com.cooksys.ftd.assignments.socket;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+
+import com.cooksys.ftd.assignments.socket.model.Config;
+import com.cooksys.ftd.assignments.socket.model.Student;
+
 public class Client {
 
     /**
@@ -12,6 +22,36 @@ public class Client {
      * over the socket as xml, and should unmarshal that object before printing its details to the console.
      */
     public static void main(String[] args) {
-        // TODO
+    	try {
+    		
+    		JAXBContext jaxb = Utils.createJAXBContext();
+        
+    		Config config = Utils.loadConfig(Utils.CONFIG_FILE_PATH, jaxb);
+    		
+    		Socket server = new Socket(config.getRemote().getHost(), config.getRemote().getPort());
+    		
+    		while (!server.isConnected())
+    		{
+    			System.out.println("not connected...");
+    			Thread.sleep(1000);
+    		}
+    		
+    		InputStream in = server.getInputStream();
+    		OutputStream out = server.getOutputStream();
+    		
+    		Unmarshaller unmarshaller = jaxb.createUnmarshaller();
+    		
+    		Student student = (Student)unmarshaller.unmarshal(in);
+    		
+    		System.out.println(student.getFavoriteIDE());
+    		
+    		server.close();
+    		
+    		
+    	}
+    	catch (Exception e)
+    	{
+    		
+    	}
     }
 }
