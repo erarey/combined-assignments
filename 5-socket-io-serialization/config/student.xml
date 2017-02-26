@@ -1,1 +1,6 @@
-<student/>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<student firstName="Eli" lastName="Rarey">
+    <favorite-ide>Eclipse</favorite-ide>
+    <favorite-language>Java</favorite-language>
+    <favorite-paradigm>Any pair of dimes is as valuable as any other</favorite-paradigm>
+</student>

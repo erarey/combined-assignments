@@ -5,8 +5,11 @@ import com.cooksys.ftd.assignments.socket.model.LocalConfig;
 import com.cooksys.ftd.assignments.socket.model.RemoteConfig;
 import com.cooksys.ftd.assignments.socket.model.Student;
 
+import java.nio.file.Paths;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 
 public class Server extends Utils {
 
@@ -34,10 +37,27 @@ public class Server extends Utils {
      * Following this transaction, the server may shut down or listen for more connections.
      */
     public static void main(String[] args) {
-        Config config = new Config();
-        config.setStudentFilePath("./config/config.xml");
-        config.setLocal(new LocalConfig());
-        config.setRemote(new RemoteConfig());
+        generateConfigStudentTest();
+        
+        
+        
+        
+        
+    }
+
+	/**
+	 * 
+	 */
+	private static void generateConfigStudentTest() {
+		Config config = new Config();
+        config.setStudentFilePath("./config/student.xml");
+        LocalConfig localConfig = new LocalConfig();
+        localConfig.setPort(12345);
+        RemoteConfig remoteConfig = new RemoteConfig();
+        remoteConfig.setPort(6789);
+        remoteConfig.setHost("someString");
+        config.setLocal(localConfig);
+        config.setRemote(remoteConfig);
         
         Student student = new Student();
         student.setFavoriteIDE("Eclipse");
@@ -46,6 +66,20 @@ public class Server extends Utils {
         student.setFirstName("Eli");
         student.setLastName("Rarey");
         
-        
-    }
+        try {
+			JAXBContext context = Utils.createJAXBContext();
+			
+			Marshaller marshaller = context.createMarshaller();
+			
+			marshaller.setProperty(marshaller.JAXB_FORMATTED_OUTPUT, true);
+			
+			marshaller.marshal(student, Paths.get("./config/student.xml").toFile());
+			marshaller.marshal(student, System.out);
+
+			marshaller.marshal(config, Paths.get("./config/config.xml").toFile());
+			marshaller.marshal(config, System.out);
+		} catch (JAXBException e) {
+			e.printStackTrace();
+		}
+	}
 }

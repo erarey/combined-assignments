@@ -46,8 +46,8 @@ public class Utils {
     	
     	Config config = (Config)unmarshaller.unmarshal(f);
     	
-    	System.out.println(config.getStudentFilePath());
-    	System.out.println(config.getLocal().getPort());
+    	System.out.println("config.getStudentFilePath() : " + config.getStudentFilePath());
+    	System.out.println("getLocal:port : " + config.getLocal().getPort());
     	
         return config;
     }
