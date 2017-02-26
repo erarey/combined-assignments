@@ -74,6 +74,7 @@ public class Server extends Utils {
         	
         	Socket client = ss.accept();
         	
+        	
         	InputStream in = client.getInputStream();
         	OutputStream out = client.getOutputStream();
         	
@@ -83,13 +84,21 @@ public class Server extends Utils {
         	
         	Marshaller marshaller = context.createMarshaller();
         	
-        	marshaller.marshal(student, out);
+        	//marshaller.marshal(student, out);
         	
-        	while (client.isConnected())
+        	while (client.isBound() && !client.isClosed())
         	{
         		System.out.println("| still connected |");
         		
-        		Thread.sleep(1000);
+        		if (client.isConnected())
+        		{
+        			System.out.println("sending...");
+        			marshaller.marshal(student, out);
+        			System.out.println("sent.");
+        			break;
+        		}
+        		
+        		Thread.sleep(10000);
         		
         	}
         	
