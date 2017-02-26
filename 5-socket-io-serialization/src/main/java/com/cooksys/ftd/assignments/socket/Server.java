@@ -5,13 +5,29 @@ import com.cooksys.ftd.assignments.socket.model.LocalConfig;
 import com.cooksys.ftd.assignments.socket.model.RemoteConfig;
 import com.cooksys.ftd.assignments.socket.model.Student;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.file.Paths;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 
 public class Server extends Utils {
+
+
+	public static final String CONFIG_FILE_PATH = "./config/config.xml";
+	//public static final String STUDENT_FILE_PATH = "./config/student.xml";
+
 
     /**
      * Reads a {@link Student} object from the given file path
@@ -19,9 +35,32 @@ public class Server extends Utils {
      * @param studentFilePath the file path from which to read the student config file
      * @param jaxb the JAXB context to use during unmarshalling
      * @return a {@link Student} object unmarshalled from the given file path
+     * @throws JAXBException
      */
-    public static Student loadStudent(String studentFilePath, JAXBContext jaxb) {
-        return null; // TODO
+    public static Student loadStudent(String studentFilePath, JAXBContext jaxb) throws JAXBException{
+		
+		
+		Unmarshaller unmarshaller = jaxb.createUnmarshaller();
+		
+		return (Student)unmarshaller.unmarshal(Paths.get(studentFilePath).toFile());
+		
+    }
+    
+    /**
+     * Reads a Config object from the given file path
+     *
+     * @param configFilePath the file path to config file
+     * @param jaxb the JAXB context to use during unmarshalling
+     * @return a Config object unmarshalled from the given file path
+     * @throws JAXBException
+     */
+    public static Config loadConfig(String configFilePath, JAXBContext jaxb) throws JAXBException{
+		JAXBContext context = Utils.createJAXBContext();
+		
+		Unmarshaller unmarshaller = context.createUnmarshaller();
+		
+		return (Config)unmarshaller.unmarshal(Paths.get(configFilePath).toFile());
+		
     }
 
     /**
@@ -37,8 +76,41 @@ public class Server extends Utils {
      * Following this transaction, the server may shut down or listen for more connections.
      */
     public static void main(String[] args) {
-        generateConfigStudentTest();
+        //generateConfigStudentTest();
         
+        try
+        {
+        	JAXBContext context = Utils.createJAXBContext();
+        	
+        	Config config = loadConfig(CONFIG_FILE_PATH, context);
+        	
+        	Integer port = config.getLocal().getPort();
+        	
+        	ServerSocket ss = new ServerSocket(port);
+        	
+        	ss.setSoTimeout(100000);
+        	
+        	Socket client = ss.accept();
+        	
+        	InputStream input = client.getInputStream();
+        	
+        	Unmarshaller unmarshaller = context.createUnmarshaller();
+        	
+        	Student student = (Student)unmarshaller.unmarshal(input);
+        	
+        	System.out.println(student.getFavoriteIDE());
+        	
+        	//DataInputStream in = new DataInputStream(client.getInputStream());
+        	
+        	//InputStream input = new FileInputStream();
+        	//System.out.println(in);
+        	//BufferedOutputStream out = new BufferedOutputStream();
+        	
+        }
+        catch(Exception e)
+        {
+        	e.printStackTrace();
+        }
         
         
         
