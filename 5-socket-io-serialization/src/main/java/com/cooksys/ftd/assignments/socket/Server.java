@@ -45,23 +45,6 @@ public class Server extends Utils {
 		return (Student)unmarshaller.unmarshal(Paths.get(studentFilePath).toFile());
 		
     }
-    
-    /**
-     * Reads a Config object from the given file path
-     *
-     * @param configFilePath the file path to config file
-     * @param jaxb the JAXB context to use during unmarshalling
-     * @return a Config object unmarshalled from the given file path
-     * @throws JAXBException
-     */
-    public static Config loadConfig(String configFilePath, JAXBContext jaxb) throws JAXBException{
-		JAXBContext context = Utils.createJAXBContext();
-		
-		Unmarshaller unmarshaller = context.createUnmarshaller();
-		
-		return (Config)unmarshaller.unmarshal(Paths.get(configFilePath).toFile());
-		
-    }
 
     /**
      * The server should load a {@link com.cooksys.ftd.assignments.socket.model.Config} object from the
@@ -82,7 +65,7 @@ public class Server extends Utils {
         {
         	JAXBContext context = Utils.createJAXBContext();
         	
-        	Config config = loadConfig(CONFIG_FILE_PATH, context);
+        	Config config = Utils.loadConfig(CONFIG_FILE_PATH, context);
         	
         	Integer port = config.getLocal().getPort();
         	
@@ -92,11 +75,12 @@ public class Server extends Utils {
         	
         	Socket client = ss.accept();
         	
-        	InputStream input = client.getInputStream();
+        	InputStream in = client.getInputStream();
+        	OutputStream out = client.getOutputStream();
         	
         	Unmarshaller unmarshaller = context.createUnmarshaller();
         	
-        	Student student = (Student)unmarshaller.unmarshal(input);
+        	Student student = (Student)unmarshaller.unmarshal(in);
         	
         	System.out.println(student.getFavoriteIDE());
         	
@@ -111,10 +95,6 @@ public class Server extends Utils {
         {
         	e.printStackTrace();
         }
-        
-        
-        
-        
     }
 
 	/**
