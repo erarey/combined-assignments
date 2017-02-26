@@ -43,7 +43,10 @@ public class Client {
     		
     		Student student = (Student)unmarshaller.unmarshal(in);
     		
-    		System.out.println(student.getFavoriteIDE());
+    		System.out.println("According to " + student.getFirstName() + " " + student.getLastName());
+    		System.out.println("Paradigm: " + student.getFavoriteParadigm());
+    		System.out.println("Language: " + student.getFavoriteLanguage());
+    		System.out.println("IDE: " + student.getFavoriteIDE());
     		
     		server.close();
     		
