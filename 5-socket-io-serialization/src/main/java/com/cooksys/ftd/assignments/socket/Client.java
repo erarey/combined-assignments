@@ -22,13 +22,17 @@ public class Client {
      * over the socket as xml, and should unmarshal that object before printing its details to the console.
      */
     public static void main(String[] args) {
+    	InputStream in = null;
+    	OutputStream out = null;
+    	Socket server = null;
+    	
     	try {
     		
     		JAXBContext jaxb = Utils.createJAXBContext();
         
     		Config config = Utils.loadConfig(Utils.CONFIG_FILE_PATH, jaxb);
     		
-    		Socket server = new Socket(config.getRemote().getHost(), config.getRemote().getPort());
+    		server = new Socket(config.getRemote().getHost(), config.getRemote().getPort());
     		
     		while (!server.isConnected())
     		{
@@ -36,8 +40,8 @@ public class Client {
     			Thread.sleep(1000);
     		}
     		
-    		InputStream in = server.getInputStream();
-    		OutputStream out = server.getOutputStream();
+    		in = server.getInputStream();
+    		out = server.getOutputStream();
     		
     		Unmarshaller unmarshaller = jaxb.createUnmarshaller();
     		
@@ -48,13 +52,27 @@ public class Client {
     		System.out.println("Language: " + student.getFavoriteLanguage());
     		System.out.println("IDE: " + student.getFavoriteIDE());
     		
-    		server.close();
+    		//server.close();
     		
     		
     	}
     	catch (Exception e)
     	{
-    		
+    		e.printStackTrace();
+    	}
+    	finally
+    	{
+    		try
+    		{
+    			in.close();
+    			out.close();
+    			server.close();
+    			
+    		}
+    		catch(Exception e)
+    		{
+    			System.out.println("Closing input, output, or socket, failed.");
+    		}
     	}
     }
 }

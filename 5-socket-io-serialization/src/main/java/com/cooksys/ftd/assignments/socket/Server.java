@@ -11,6 +11,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
@@ -23,10 +24,6 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 public class Server extends Utils {
-
-
-	//public static final String STUDENT_FILE_PATH = "./config/student.xml";
-
 
     /**
      * Reads a {@link Student} object from the given file path
@@ -60,23 +57,27 @@ public class Server extends Utils {
     public static void main(String[] args) {
         //generateConfigStudentTest();
         
+    	InputStream in = null;
+    	OutputStream out = null;
+    	Socket client = null;
+    	ServerSocket ss = null;
         try
         {
+        	
         	JAXBContext context = Utils.createJAXBContext();
         	
         	Config config = Utils.loadConfig(Utils.CONFIG_FILE_PATH, context);
         	
         	Integer port = config.getLocal().getPort();
         	
-        	ServerSocket ss = new ServerSocket(port);
+        	ss = new ServerSocket(port);
         	
         	ss.setSoTimeout(100000);
         	
-        	Socket client = ss.accept();
+        	client = ss.accept();
         	
-        	
-        	InputStream in = client.getInputStream();
-        	OutputStream out = client.getOutputStream();
+        	in = client.getInputStream();
+        	out = client.getOutputStream();
         	
         	Unmarshaller unmarshaller = context.createUnmarshaller();
         	
@@ -97,25 +98,25 @@ public class Server extends Utils {
         			System.out.println("sent.");
         			break;
         		}
-        		
-        		Thread.sleep(10000);
-        		
+        		Thread.sleep(10000);	
         	}
-        	
-        	client.close();
-        	
-        	//System.out.println(student.getFavoriteIDE());
-        	
-        	//DataInputStream in = new DataInputStream(client.getInputStream());
-        	
-        	//InputStream input = new FileInputStream();
-        	//System.out.println(in);
-        	//BufferedOutputStream out = new BufferedOutputStream();
-        	
         }
         catch(Exception e)
         {
         	e.printStackTrace();
+        }
+        finally
+        {
+        	try {
+				client.close();
+				in.close();
+				out.close();
+				ss.close();
+        	}
+			catch(Exception e)
+			{
+				System.out.println("Closing client Socket, input, output, or ServerSocket, failed.");
+			}
         }
     }
 
