@@ -36,6 +36,7 @@ public class Client {
     		
     		while (!server.isConnected())
     		{
+    			//In testing, this loop was never entered.
     			System.out.println("not connected...");
     			Thread.sleep(1000);
     		}

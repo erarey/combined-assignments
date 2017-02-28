@@ -1,5 +1,11 @@
 package com.cooksys.ftd.assignments.concurrency;
 
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashSet;
+
+import com.cooksys.ftd.assignments.concurrency.model.config.Config;
+
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class Main {
@@ -15,6 +21,21 @@ public class Main {
      * is not disabled, create a {@link Client} object with the client config ans spin off a thread to run it.
      */
     public static void main(String[] args) {
-       throw new NotImplementedException();
+       Config config = Config.load(Paths.get(Config.PATH_TO_CONFIG));
+       
+       HashSet<Thread> serverThreads = new HashSet<>();
+       HashSet<Thread> clientThreads = new HashSet<>();
+       
+       if (!config.getServer().isDisabled())
+       {
+    	   serverThreads.add(new Thread(new Server(config.getServer())));
+    	   
+       }
+       
+       if (!config.getClient().isDisabled())
+       {
+    	   clientThreads.add(new Thread(new Client(config.getClient())));
+    	   
+       }
     }
 }

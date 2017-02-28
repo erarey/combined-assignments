@@ -61,6 +61,7 @@ public class Server extends Utils {
     	OutputStream out = null;
     	Socket client = null;
     	ServerSocket ss = null;
+    	
         try
         {
         	
@@ -84,8 +85,6 @@ public class Server extends Utils {
         	Student student = (Student)unmarshaller.unmarshal(Paths.get(config.getStudentFilePath()).toFile());
         	
         	Marshaller marshaller = context.createMarshaller();
-        	
-        	//marshaller.marshal(student, out);
         	
         	while (client.isBound() && !client.isClosed())
         	{
