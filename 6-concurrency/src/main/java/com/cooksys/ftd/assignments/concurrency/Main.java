@@ -1,7 +1,7 @@
 package com.cooksys.ftd.assignments.concurrency;
 
 import java.nio.file.Paths;
-import java.util.ArrayList;
+//import java.util.ArrayList;
 import java.util.HashSet;
 
 import com.cooksys.ftd.assignments.concurrency.model.config.Config;
@@ -23,19 +23,25 @@ public class Main {
     public static void main(String[] args) {
        Config config = Config.load(Paths.get(Config.PATH_TO_CONFIG));
        
-       HashSet<Thread> serverThreads = new HashSet<>();
-       HashSet<Thread> clientThreads = new HashSet<>();
+       Server server = null;
+       
+       Client client = null;
+       
+       //LECTURE Q NOTE: 2 ports are provided in case the server is disabled 
+       // so that the client can still connect to someone else
        
        if (!config.getServer().isDisabled())
        {
-    	   serverThreads.add(new Thread(new Server(config.getServer())));
+    	   server = new Server(config.getServer());
+    	   new Thread(server).start();
     	   
        }
        
        if (!config.getClient().isDisabled())
        {
-    	   clientThreads.add(new Thread(new Client(config.getClient())));
-    	   
+    	   client = new Client(config.getClient());
+    	   new Thread(client).start();
        }
+       
     }
 }
