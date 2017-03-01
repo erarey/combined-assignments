@@ -38,4 +38,13 @@ public class Response {
     public void setSuccessful(boolean successful) {
         this.successful = successful;
     }
+    
+    public Response(){}
+    
+    public Response(String data, RequestType type, boolean successful)
+    {
+    	this.data = data;
+    	this.type = type;
+    	this.successful = successful;
+    }
 }
