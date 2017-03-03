@@ -3,10 +3,20 @@ package com.cooksys.ftd.assignments.concurrency;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.net.Socket;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+
+import com.cooksys.ftd.assignments.concurrency.model.config.StayOpenInputStream;
+import com.cooksys.ftd.assignments.concurrency.model.message.Request;
 import com.cooksys.ftd.assignments.concurrency.model.message.RequestType;
+import com.cooksys.ftd.assignments.concurrency.model.message.Response;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -16,31 +26,71 @@ public class ClientHandler implements Runnable {
 	boolean open = true;
 	double upTime = 0;
 
-	ClientHandler() {
+	ClientHandler(Socket socket) {
 		upTime = System.currentTimeMillis();
+		this.socket = socket;
+		System.out.println("made client handler");
 	}
 
 	@Override
 	public void run() {
 		try {
-			InputStream in = socket.getInputStream();
+			//InputStream in = new StayOpenInputStream(socket.getInputStream());
 			
-			BufferedInputStream buff_in = new BufferedInputStream(in);
+			InputStreamReader in = new InputStreamReader(new BufferedInputStream(socket.getInputStream()));
 			
-			OutputStream out = socket.getOutputStream();
+			OutputStreamWriter out = new OutputStreamWriter(new BufferedOutputStream(socket.getOutputStream()));
 			
-			BufferedOutputStream buff_out = new BufferedOutputStream(out);
+			//BufferedInputStream buff_in = new BufferedInputStream(in);
 			
+			//StringWriter out = new StringWriter();
+			//StringBuilder out2 = new StringBuilder();
+			//BufferedOutputStream buff_out = new BufferedOutputStream(out);
+			
+			JAXBContext context = JAXBContext.newInstance(Request.class, Response.class);
+			
+			//will these streams be closed after 1 object?
+			
+			Marshaller marshaller = context.createMarshaller();
+			
+			Unmarshaller unmarshaller = context.createUnmarshaller();
 			
 			while (open) {
 				if (socket == null || socket.isClosed() || !socket.isBound()) {
+					System.out.println("The socket was closed!, closing down ClientHandler");
 					close();
 					continue;
 				}
 				// if DONE, close, else TIME, SEND TIME, else IDENTITY, send ID
-				String msg_received = "";
-				String msg_return = "";
+				Thread.sleep(2000);
 				
+				System.out.println("trying to receive...");
+				
+				Request re = (Request)unmarshaller.unmarshal(in);
+				
+				System.out.println("received!");
+				
+				System.out.println(re.getType().toString());
+				
+				RequestType rt = re.getType();
+				
+				if (rt == RequestType.IDENTITY)
+				{
+					Response res = new Response("MY ID IS ...", RequestType.IDENTITY, true);
+					marshaller.marshal(res, out);
+				}
+				else if (rt == RequestType.TIME)
+				{
+					Response res = new Response("" + (System.currentTimeMillis() - upTime), RequestType.TIME, true);
+					marshaller.marshal(res, out);
+				}
+				else if (rt == RequestType.DONE)
+				{
+					Response res = new Response("DONE!!", RequestType.DONE, true);
+					marshaller.marshal(res, out);
+					close();
+				}
+				/*
 				while (buff_in.read() != -1)
 				{
 					msg_received += buff_in.read();
@@ -68,6 +118,7 @@ public class ClientHandler implements Runnable {
 					System.out.println("request for done");
 					close();
 				}
+				*/
 				
 				Thread.sleep(100);
 			}

@@ -16,4 +16,11 @@ public class Request {
     public void setType(RequestType type) {
         this.type = type;
     }
+    
+    public Request(){}
+    
+    public Request(RequestType type)
+    {
+    	this.type = type;
+    }
 }

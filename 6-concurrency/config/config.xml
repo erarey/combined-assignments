@@ -5,7 +5,7 @@
     </server>
     <client disabled="false">
         <port>8080</port>
-        <host>localhost</host>
+        <host>10.1.1.126</host>
         <max-instances>-1</max-instances>
         <spawn-strategy>PARALLEL</spawn-strategy>
         <instances>

@@ -1,5 +1,6 @@
 package com.cooksys.ftd.assignments.concurrency;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.HashSet;
 
@@ -13,26 +14,40 @@ public class Server implements Runnable {
 	ServerConfig config = null;
 	
     public Server(ServerConfig config) {
+    	System.out.println("made Server (clientHandler manager)");
         this.config = config;
     }
 
     @Override
     public void run() {
+    	
+    	ServerSocket server = null;
+    	
     	try {
     		
-    		ServerSocket server = new ServerSocket(config.getPort());
+    		server = new ServerSocket(config.getPort());
+    		server.setSoTimeout(100000);
     		
     		while (true)
         	{
-        		ClientHandler ch = new ClientHandler();
-        		ch.setSocket(server.accept());
+    			System.out.println("searching...");
+        		ClientHandler ch = new ClientHandler(server.accept());
+        		//ch.setSocket(server.accept());
         		new Thread(ch).start();
-        		
+        		//Thread.sleep(9000);
         	}
     	}
     	catch (Exception e)
     	{
     		e.printStackTrace();
+    	}
+    	finally
+    	{
+    		try {
+				server.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
     	}
     }
 }
