@@ -31,14 +31,15 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class ClientInstance implements Runnable {
 
-	//Queue<Request> requests = null;
-	//Queue<Response> responses = new LinkedList<Response>();
-	
+	Object lock = new Object();
+	// Queue<Request> requests = null;
+	// Queue<Response> responses = new LinkedList<Response>();
+
 	public List<Request> unsentRequestsSyncd = null;
-	
+
 	public List<Response> unprocessedResponsesSyncd = Collections.synchronizedList(new ArrayList<Response>());
-	
-	//ArrayList<String> strCollect = new ArrayList<String>();
+
+	// ArrayList<String> strCollect = new ArrayList<String>();
 	ClientInstanceConfig config = null;
 	Socket socket;
 
@@ -49,20 +50,27 @@ public class ClientInstance implements Runnable {
 	public ClientInstance(ClientInstanceConfig config, Socket socket) {
 		System.out.println("made a client instance");
 		this.socket = socket;
-		
-		unsentRequestsSyncd = Collections.synchronizedList(new ArrayList<Request>(config.getRequests()));
-		
-		Collections.reverse(unsentRequestsSyncd); //so that it can be treated as a queue via remove of last item.
-		
-		//requests = new LinkedList<Request>(config.getRequests());
+
+		synchronized (lock) {
+			unsentRequestsSyncd = Collections.synchronizedList(new ArrayList<Request>(config.getRequests()));
+
+			Collections.reverse(unsentRequestsSyncd); // so that it can be
+														// treated
+														// as a queue via remove
+														// of
+														// last item.
+		}
+		// requests = new LinkedList<Request>(config.getRequests());
 		this.config = config;
 	}
 
 	@Override
 	public void run() {
 		try {
-			
-			//Output
+			Thread receiver = new Thread(new ResponseReceiver(socket.getInputStream(), unprocessedResponsesSyncd));
+
+			//receiver.start();
+
 			OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream());
 
 			JAXBContext context = JAXBContext.newInstance(Response.class, Request.class);
@@ -70,39 +78,50 @@ public class ClientInstance implements Runnable {
 			Marshaller marshaller = context.createMarshaller();
 
 			marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-			
+
 			StringWriter sw = new StringWriter();
-			
+
 			while (true)// socket.isConnected() && !socket.isClosed())
 			{
 				if (!unsentRequestsSyncd.isEmpty()) {
 
 					try {
+						synchronized (lock) {
+							System.out.println("There are " + unsentRequestsSyncd.size() + " left to send.");
 
-						System.out.println("There are " + unsentRequestsSyncd.size() + " left to send.");
+							Request rt = unsentRequestsSyncd.remove(unsentRequestsSyncd.size() - 1);
 
-						Request rt = unsentRequestsSyncd.remove(unsentRequestsSyncd.size()-1);
-						
-						marshaller.marshal(rt, sw);
-						
-						sw.flush();
-						
-						out.write(sw.toString());
-			
-						out.flush();
-						
-						//sw.close();
-						
-						System.out.println("client is waiting for response...");
-						//Thread.sleep(4000);
+							marshaller.marshal(rt, sw);
+
+							sw.flush();
+
+							out.write(sw.toString());
+
+							out.flush();
+
+							// sw.close();
+
+							System.out.println("client is waiting for response...");
+							// Thread.sleep(4000);
+						}
+
 						Thread.sleep(config.getDelay());
 
 					} catch (InterruptedException e) {
 						System.out.println("JAXB failed (inner exception)");
 					}
 				}
-				
-				
+
+				if (!unprocessedResponsesSyncd.isEmpty()) {
+					synchronized (lock) {
+						System.out.println("There are " + unprocessedResponsesSyncd.size() + " left to process.");
+
+						Response re = unprocessedResponsesSyncd.remove(unprocessedResponsesSyncd.size() - 1);
+
+						System.out.println("Handler says: " + re.getData());
+					}
+				}
+
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

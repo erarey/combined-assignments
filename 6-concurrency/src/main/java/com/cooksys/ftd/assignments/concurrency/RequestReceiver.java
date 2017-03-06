@@ -47,9 +47,11 @@ public class RequestReceiver implements Runnable {
 			StringWriter sw = new StringWriter();
 
 			ArrayList<String> xmlObjectsFound = new ArrayList<String>();
-
+			
+			int found = 0;
+			
 			while (true) {
-
+				
 				int leftB = 0;
 				int rightB = 0;
 				String s = "";
@@ -57,6 +59,7 @@ public class RequestReceiver implements Runnable {
 				boolean rootNodeComplete = false;
 
 				while (rootNodeComplete == false && in.ready()) {
+					
 					char c = (char) in.read();
 
 					s += c;
@@ -70,8 +73,13 @@ public class RequestReceiver implements Runnable {
 							if (s.indexOf(("</" + classname + ">")) != -1) {
 								// System.out.println("found request end node");
 								int endOfRootNode = s.indexOf(("</" + classname + ">")) + classname.length() + 3;
+								System.out.println("XMLOBJECTS: " + s.substring(s.indexOf("<?xml"), endOfRootNode));
 								xmlObjectsFound.add(s.substring(s.indexOf("<?xml"), endOfRootNode));
 								s = s.substring(endOfRootNode);
+								found++;
+								
+								System.out.println("XMLOBJECTS FOUND " + found);
+								
 								rootNodeComplete = true;
 							}
 						}

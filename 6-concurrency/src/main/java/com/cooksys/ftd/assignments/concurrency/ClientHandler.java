@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -30,10 +31,11 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class ClientHandler implements Runnable {
 
-	Socket socket = null;
-	ServerSocket ss = null;
-	boolean open = true;
-	double upTime = 0;
+	private Object lock = new Object();
+	private Socket socket = null;
+	private ServerSocket ss = null;
+	public boolean open = true;
+	private double startTime = 0;
 
 	// TODO: switch to some kind of Syncd LinkedList; determine if
 	// unsentResponseSyncd is necessary; getters and setters for lists/queues
@@ -45,7 +47,7 @@ public class ClientHandler implements Runnable {
 	// ArrayList<String> strCollect = new ArrayList<String>();
 
 	ClientHandler(Socket socket, ServerSocket ss) {
-		upTime = System.currentTimeMillis();
+		startTime = System.currentTimeMillis();
 		this.socket = socket;
 		this.ss = ss;
 		System.out.println("made client handler");
@@ -58,41 +60,94 @@ public class ClientHandler implements Runnable {
 			Thread receiver = new Thread(new RequestReceiver(socket.getInputStream(), unprocessedRequestsSyncd));
 
 			receiver.start();
-			// InputStream in = new
-			// StayOpenInputStream(socket.getInputStream());
 
-			// InputStreamReader in = new InputStreamReader(new
-			// BufferedInputStream(socket.getInputStream()));
-
-			// OutputStreamWriter out = new OutputStreamWriter(new
-			// BufferedOutputStream(socket.getOutputStream()));
-
-			// BufferedInputStream buff_in = new BufferedInputStream(in);
-
-			// StringWriter out = new StringWriter();
-			// StringBuilder out2 = new StringBuilder();
-			// BufferedOutputStream buff_out = new BufferedOutputStream(out);
+			OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream());
 
 			JAXBContext context = JAXBContext.newInstance(Response.class);
 
-			// will these streams be closed after 1 object?
-
 			Marshaller marshaller = context.createMarshaller();
 
-			// Unmarshaller unmarshaller = context.createUnmarshaller();
+			StringWriter sw = new StringWriter();
 
-			while (true) {
-				// block for testing
+			while (open) {
+				Thread.sleep(500);
+				while (!unprocessedRequestsSyncd.isEmpty()) {
+
+					try {
+
+						// System.out.println("There are " +
+						// unprocessedRequestsSyncd.size() + " left to
+						// process.");
+
+						// while this is probably better for memory access, it
+						// can result in sending responses as if they were in a
+						// stack
+						Response re = new Response();
+						
+						synchronized (lock) {
+							Request rt = unprocessedRequestsSyncd.remove(unprocessedRequestsSyncd.size() - 1);
+
+							
+
+							switch (rt.getType()) {
+							case IDENTITY:
+								re.setData("Received request for ID...");
+								re.setType(RequestType.IDENTITY);
+								re.isSuccessful();
+								break;
+
+							case TIME:
+								re.setData("" + (System.currentTimeMillis() - startTime));
+								re.setType(RequestType.IDENTITY);
+								re.isSuccessful();
+								break;
+
+							case DONE:
+								re.setData("Closing down connection.");
+								re.setType(RequestType.DONE);
+								re.isSuccessful();
+								break;
+							}
+						}
+						// re = new Response(new String("Got your request for
+						// identity"), rt.getType(), true);
+
+						System.out.println("trying to write back: " + re.getData());
+						marshaller.marshal(re, sw);
+
+						sw.flush();
+
+						out.write(sw.toString());
+
+						out.flush();
+
+						// sw.close();
+
+						// System.out.println("client is waiting for
+						// response...");
+						// Thread.sleep(4000);
+						// Thread.sleep(config.getDelay());
+
+					} catch (Exception e) {
+						System.out.println("JAXB failed (inner exception)");
+					}
+				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-
+			try {
+				socket.close();
+			} catch (IOException e) {
+				System.out.println("Failed to close a ClientHandler's socket");
+				e.printStackTrace();
+			}
 		}
 	}
 
 	public void close() {
 		open = false;
+
 	}
 
 	public Socket getSocket() {
