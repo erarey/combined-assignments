@@ -31,7 +31,7 @@ public class Server implements Runnable {
     		while (true)
         	{
     			System.out.println("searching...");
-        		ClientHandler ch = new ClientHandler(server.accept());
+        		ClientHandler ch = new ClientHandler(server.accept(), server);
         		//ch.setSocket(server.accept());
         		new Thread(ch).start();
         		//Thread.sleep(9000);

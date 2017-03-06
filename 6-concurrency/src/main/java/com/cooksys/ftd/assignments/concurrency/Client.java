@@ -38,7 +38,7 @@ public class Client implements Runnable {
 					clientInstances.add(ci);
 
 					new Thread(ci).start();
-					System.out.println("client thread starting");
+					System.out.println("clientInstance thread starting");
 				}
 			} else if (strat == SpawnStrategy.SEQUENTIAL) {
 
@@ -51,16 +51,16 @@ public class Client implements Runnable {
 
 			while (iter.hasNext()) {
 				ClientInstance ci = iter.next();
-				if (ci.requests.isEmpty()) {
-					System.out
-							.println("trying to close a ClientInstance..." + clientInstances.size() + " will be left");
-					try {
-						ci.getSocket().close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					iter.remove();
-				}
+				//if (ci.requests.isEmpty()) {
+					//System.out
+						//	.println("trying to close a ClientInstance..." + clientInstances.size() + " will be left");
+					//try {
+						//ci.getSocket().close();
+				//	} catch (IOException e) {
+					//	e.printStackTrace();
+					//}
+					//iter.remove();
+				//}
 			}
 
 		} while (!clientInstances.isEmpty());
