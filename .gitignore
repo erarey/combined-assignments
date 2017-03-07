@@ -74,3 +74,5 @@ com_crashlytics_export_strings.xml
 4-file-io-serialization/output/session\.out\.xml
 
 6-concurrency/src/main/java/com/cooksys/ftd/assignments/concurrency/model/config/StayOpenInputStream\.java
+
+6-concurrency/config/config\.out\.xml

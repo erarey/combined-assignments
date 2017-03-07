@@ -35,7 +35,7 @@ public class ClientInstance implements Runnable {
 	// Queue<Request> requests = null;
 	// Queue<Response> responses = new LinkedList<Response>();
 
-	public List<Request> unsentRequestsSyncd = null;
+	public List<Request> unsentRequests = null;
 
 	public List<Response> unprocessedResponsesSyncd = Collections.synchronizedList(new ArrayList<Response>());
 
@@ -51,15 +51,14 @@ public class ClientInstance implements Runnable {
 		System.out.println("made a client instance");
 		this.socket = socket;
 
-		synchronized (lock) {
-			unsentRequestsSyncd = Collections.synchronizedList(new ArrayList<Request>(config.getRequests()));
+		unsentRequests = new ArrayList<Request>(config.getRequests());
 
-			Collections.reverse(unsentRequestsSyncd); // so that it can be
-														// treated
-														// as a queue via remove
-														// of
-														// last item.
-		}
+		Collections.reverse(unsentRequests); // so that it can be
+												// treated
+												// as a queue via remove
+												// of
+												// last item.
+
 		// requests = new LinkedList<Request>(config.getRequests());
 		this.config = config;
 	}
@@ -67,43 +66,46 @@ public class ClientInstance implements Runnable {
 	@Override
 	public void run() {
 		try {
-			Thread receiver = new Thread(new ResponseReceiver(socket.getInputStream(), unprocessedResponsesSyncd));
+			Thread receiver = new Thread(
+					new ResponseReceiver(socket.getInputStream(), unprocessedResponsesSyncd, lock));
 
-			//receiver.start();
+			receiver.start();
 
 			OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream());
 
-			JAXBContext context = JAXBContext.newInstance(Response.class, Request.class);
-
-			Marshaller marshaller = context.createMarshaller();
-
-			marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-
-			StringWriter sw = new StringWriter();
+			List<Response> tempList = new ArrayList<Response>();
 
 			while (true)// socket.isConnected() && !socket.isClosed())
 			{
-				if (!unsentRequestsSyncd.isEmpty()) {
+				if (!unsentRequests.isEmpty()) {
 
 					try {
-						synchronized (lock) {
-							System.out.println("There are " + unsentRequestsSyncd.size() + " left to send.");
+						JAXBContext context = JAXBContext.newInstance(Response.class, Request.class);
 
-							Request rt = unsentRequestsSyncd.remove(unsentRequestsSyncd.size() - 1);
+						Marshaller marshaller = context.createMarshaller();
 
-							marshaller.marshal(rt, sw);
+						marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
-							sw.flush();
+						StringWriter sw = new StringWriter();
 
-							out.write(sw.toString());
+						System.out.println("There are " + unsentRequests.size() + " left to send.");
+						Request rt = unsentRequests.remove(unsentRequests.size() - 1);
 
-							out.flush();
+						sw.flush();
+						out.flush();
 
-							// sw.close();
+						marshaller.marshal(rt, sw);
 
-							System.out.println("client is waiting for response...");
-							// Thread.sleep(4000);
-						}
+						sw.flush();
+
+						out.write(sw.toString());
+
+						out.flush();
+
+						sw.close();
+
+						System.out.println("After sending, there are " + unsentRequests.size() + " left");
+						// Thread.sleep(4000);
 
 						Thread.sleep(config.getDelay());
 
@@ -112,13 +114,17 @@ public class ClientInstance implements Runnable {
 					}
 				}
 
-				if (!unprocessedResponsesSyncd.isEmpty()) {
-					synchronized (lock) {
-						System.out.println("There are " + unprocessedResponsesSyncd.size() + " left to process.");
+				synchronized (lock) {
+					tempList.addAll(unprocessedResponsesSyncd);
+					unprocessedResponsesSyncd.clear();
+					while (!tempList.isEmpty()) {
+						synchronized (lock) {
+							System.out.println("There are " + unprocessedResponsesSyncd.size() + " left to process.");
 
-						Response re = unprocessedResponsesSyncd.remove(unprocessedResponsesSyncd.size() - 1);
+							Response re = tempList.remove(tempList.size() - 1);
 
-						System.out.println("Handler says: " + re.getData());
+							System.out.println("Client received response from Handler: " + re.getData());
+						}
 					}
 				}
 

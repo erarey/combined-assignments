@@ -57,82 +57,87 @@ public class ClientHandler implements Runnable {
 	public void run() {
 		try {
 
-			Thread receiver = new Thread(new RequestReceiver(socket.getInputStream(), unprocessedRequestsSyncd));
+			Thread receiver = new Thread(new RequestReceiver(socket.getInputStream(), unprocessedRequestsSyncd, lock));
 
 			receiver.start();
 
 			OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream());
 
-			JAXBContext context = JAXBContext.newInstance(Response.class);
-
-			Marshaller marshaller = context.createMarshaller();
-
-			StringWriter sw = new StringWriter();
+			
 
 			while (open) {
 				Thread.sleep(500);
-				while (!unprocessedRequestsSyncd.isEmpty()) {
+				// while (!unprocessedRequestsSyncd.isEmpty()) {
 
-					try {
+				try {
 
-						// System.out.println("There are " +
-						// unprocessedRequestsSyncd.size() + " left to
-						// process.");
+					// System.out.println("There are " +
+					// unprocessedRequestsSyncd.size() + " left to
+					// process.");
 
-						// while this is probably better for memory access, it
-						// can result in sending responses as if they were in a
-						// stack
-						Response re = new Response();
-						
-						synchronized (lock) {
-							Request rt = unprocessedRequestsSyncd.remove(unprocessedRequestsSyncd.size() - 1);
+					Response re = new Response();
 
-							
+					List<Request> tempList = new ArrayList<Request>();
 
-							switch (rt.getType()) {
-							case IDENTITY:
-								re.setData("Received request for ID...");
-								re.setType(RequestType.IDENTITY);
-								re.isSuccessful();
-								break;
+					synchronized (lock) {
+						tempList.addAll(unprocessedRequestsSyncd);
+						unprocessedRequestsSyncd.clear();
+					}
 
-							case TIME:
-								re.setData("" + (System.currentTimeMillis() - startTime));
-								re.setType(RequestType.IDENTITY);
-								re.isSuccessful();
-								break;
+					while (!tempList.isEmpty()) {
+						JAXBContext context = JAXBContext.newInstance(Response.class);
 
-							case DONE:
-								re.setData("Closing down connection.");
-								re.setType(RequestType.DONE);
-								re.isSuccessful();
-								break;
-							}
+						Marshaller marshaller = context.createMarshaller();
+
+						StringWriter sw = new StringWriter();
+
+						Request rt = tempList.remove(tempList.size() - 1);
+
+						switch (rt.getType()) {
+						case IDENTITY:
+							re.setData("Received request for ID...");
+							re.setType(RequestType.IDENTITY);
+							re.isSuccessful();
+							break;
+
+						case TIME:
+							re.setData("" + (System.currentTimeMillis() - startTime));
+							re.setType(RequestType.IDENTITY);
+							re.isSuccessful();
+							break;
+
+						case DONE:
+							re.setData("Closing down connection.");
+							re.setType(RequestType.DONE);
+							re.isSuccessful();
+							close();
+							break;
 						}
-						// re = new Response(new String("Got your request for
-						// identity"), rt.getType(), true);
 
 						System.out.println("trying to write back: " + re.getData());
+
 						marshaller.marshal(re, sw);
 
 						sw.flush();
 
 						out.write(sw.toString());
-
+						
 						out.flush();
-
-						// sw.close();
-
-						// System.out.println("client is waiting for
-						// response...");
-						// Thread.sleep(4000);
 						// Thread.sleep(config.getDelay());
-
-					} catch (Exception e) {
-						System.out.println("JAXB failed (inner exception)");
 					}
+
+					// sw.close();
+
+					// System.out.println("client is waiting for
+					// response...");
+					// Thread.sleep(4000);
+					//
+
+				} catch (Exception e) {
+					System.out.println("JAXB failed (inner exception)");
 				}
 			}
+			// }
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {

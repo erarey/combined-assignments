@@ -17,23 +17,23 @@ import com.cooksys.ftd.assignments.concurrency.model.message.Response;
 //TODO: make generic
 
 public class ResponseReceiver implements Runnable {
-	
+
 	private InputStream input = null;
 
 	private List<Response> deposit = null;
+	Object lock = null;
 	
-	public ResponseReceiver (InputStream in, List<Response> deposit)
-	{
+	public ResponseReceiver(InputStream in, List<Response> deposit, Object lock) {
 		this.input = in;
 		this.deposit = deposit;
-		
+		this.lock = lock;
 	}
-	
+
 	@Override
 	public void run() {
 		try {
 			String classname = "response";
-			
+
 			System.out.println("A receiver thread is active");
 
 			InputStreamReader in = new InputStreamReader(input);
@@ -61,46 +61,48 @@ public class ResponseReceiver implements Runnable {
 
 					s += c;
 
-					if (c == '<') {
-						leftB++;
-					} else if (c == '>') {
-						// System.out.println("looking for Response end node");
-						rightB++;
-						if (leftB == rightB) {
-							if (s.indexOf(("</" + classname + ">")) != -1) {
-								// System.out.println("found response end node");
-								int endOfRootNode = s.indexOf(("</" + classname + ">")) + classname.length() + 3;
-								xmlObjectsFound.add(s.substring(s.indexOf("<?xml"), endOfRootNode));
-								s = s.substring(endOfRootNode);
-								rootNodeComplete = true;
-							}
+					// if (c == '<') {
+					// leftB++;
+					if (c == '>') {
+						//System.out.println("looking for Response end node");
+						// rightB++;
+						// if (leftB == rightB) {
+						if (s.indexOf(("</" + classname + ">")) != -1) {
+							//System.out.println("found response end node");
+							int endOfRootNode = s.indexOf(("</" + classname + ">")) + classname.length() + 3;
+							xmlObjectsFound.add(s.substring(s.indexOf("<?xml"), endOfRootNode));
+							s = "";
+							rootNodeComplete = true;
 						}
 					}
+					// }
 				}
 				// System.out.println(s);
 				// s = sw.toString();
 				// System.out.println("XMLObjectsFound size = " +
 				// xmlObjectsFound.size());
 
-				for (int i = xmlObjectsFound.size() - 1; i > 0; i--) {
+				while (!xmlObjectsFound.isEmpty()) {
 					latest = null;
-					String xmlS = xmlObjectsFound.remove(i);
+					String xmlS = xmlObjectsFound.remove(xmlObjectsFound.size()-1);
 					if (xmlS != "") {
-						System.out.println("trying to convert...");
-						System.out.println(xmlS);
-
-						latest = (Response) unmarshaller.unmarshal(new StringReader(xmlS));
-						System.out.println("Receiver got: ");
+						//System.out.println("trying to convert...");
+						//System.out.println(xmlS);
+						StringReader tempStringReader = new StringReader(xmlS);
+						latest = (Response) unmarshaller.unmarshal(tempStringReader);
+						tempStringReader.close();
+						System.out.println("ResponseReceiver got: ");
 
 						if (latest != null) {
 							System.out.println(latest.getType().toString());
 
 							// System.out.println("After receiving,
 							// input status is: ");
-							
-							deposit.add(new Response(latest.getData(), latest.getType(), latest.isSuccessful()));
-							// s = "";
-							latest = null;
+							synchronized(lock){
+								deposit.add(new Response(latest.getData(), latest.getType(), true));
+								// s = "";
+								latest = null;
+							}
 
 						}
 					}
