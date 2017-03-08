@@ -2,12 +2,15 @@ package com.cooksys.ftd.assignments.concurrency;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
 import java.util.HashSet;
 
 import com.cooksys.ftd.assignments.concurrency.model.config.ServerConfig;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class Server implements Runnable {
+	
+	boolean open = true;
 	
 	HashSet<ClientHandler> clientHandlers = new HashSet<>();
 	
@@ -26,9 +29,9 @@ public class Server implements Runnable {
     	try {
     		
     		server = new ServerSocket(config.getPort());
-    		server.setSoTimeout(100000);
+    		server.setSoTimeout(80000);
     		
-    		while (true)
+    		while (open == true)
         	{
     			System.out.println("searching...");
         		ClientHandler ch = new ClientHandler(server.accept(), server);
@@ -36,6 +39,11 @@ public class Server implements Runnable {
         		new Thread(ch).start();
         		//Thread.sleep(9000);
         	}
+    	}
+    	catch (SocketTimeoutException e)
+    	{
+    		close();
+    		System.out.println("Server received no new contact for a while and is now closing down.");
     	}
     	catch (Exception e)
     	{
@@ -49,5 +57,11 @@ public class Server implements Runnable {
 				e.printStackTrace();
 			}
     	}
+    }
+    
+    void close()
+    {
+    	open = false;
+    	
     }
 }

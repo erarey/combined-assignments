@@ -30,10 +30,13 @@ import com.cooksys.ftd.assignments.concurrency.model.message.Response;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class ClientInstance implements Runnable {
-
+	Thread receiver = null;
+	
+	ResponseReceiver receiverRunnable = null;
+	
 	Object lock = new Object();
-	// Queue<Request> requests = null;
-	// Queue<Response> responses = new LinkedList<Response>();
+
+	boolean open = true;
 
 	public List<Request> unsentRequests = null;
 
@@ -53,21 +56,19 @@ public class ClientInstance implements Runnable {
 
 		unsentRequests = new ArrayList<Request>(config.getRequests());
 
-		Collections.reverse(unsentRequests); // so that it can be
-												// treated
-												// as a queue via remove
-												// of
-												// last item.
+		Collections.reverse(unsentRequests);
 
-		// requests = new LinkedList<Request>(config.getRequests());
 		this.config = config;
 	}
 
 	@Override
 	public void run() {
 		try {
-			Thread receiver = new Thread(
-					new ResponseReceiver(socket.getInputStream(), unprocessedResponsesSyncd, lock));
+			int expectedResponses = unsentRequests.size();
+			
+			receiverRunnable = new ResponseReceiver(socket.getInputStream(), unprocessedResponsesSyncd, lock);
+			receiver = new Thread(receiverRunnable);
+					
 
 			receiver.start();
 
@@ -75,8 +76,7 @@ public class ClientInstance implements Runnable {
 
 			List<Response> tempList = new ArrayList<Response>();
 
-			while (true)// socket.isConnected() && !socket.isClosed())
-			{
+			while (open == true) {
 				if (!unsentRequests.isEmpty()) {
 
 					try {
@@ -84,11 +84,12 @@ public class ClientInstance implements Runnable {
 
 						Marshaller marshaller = context.createMarshaller();
 
-						marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+						//marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
 						StringWriter sw = new StringWriter();
 
-						System.out.println("There are " + unsentRequests.size() + " left to send.");
+						// System.out.println("There are " +
+						// unsentRequests.size() + " left to send.");
 						Request rt = unsentRequests.remove(unsentRequests.size() - 1);
 
 						sw.flush();
@@ -110,6 +111,7 @@ public class ClientInstance implements Runnable {
 						Thread.sleep(config.getDelay());
 
 					} catch (InterruptedException e) {
+						e.printStackTrace();
 						System.out.println("JAXB failed (inner exception)");
 					}
 				}
@@ -117,25 +119,48 @@ public class ClientInstance implements Runnable {
 				synchronized (lock) {
 					tempList.addAll(unprocessedResponsesSyncd);
 					unprocessedResponsesSyncd.clear();
-					while (!tempList.isEmpty()) {
-						synchronized (lock) {
-							System.out.println("There are " + unprocessedResponsesSyncd.size() + " left to process.");
-
-							Response re = tempList.remove(tempList.size() - 1);
-
-							System.out.println("Client received response from Handler: " + re.getData());
-						}
-					}
 				}
+				while (!tempList.isEmpty()) {
+					// System.out.println("There are " +
+					// unprocessedResponsesSyncd.size() + " left to process.");
+
+					Response re = tempList.remove(tempList.size() - 1);
+
+					System.out.println("Client received response from Handler: " + re.getType() + " : " + re.getData()
+							+ " success: " + re.isSuccessful());
+					
+					expectedResponses--;
+
+				}
+				
+				if (expectedResponses == 0) close();
 
 			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			// System.out.println("JAXB failed");
+		} finally {
+			close();
+			try {
+				//socket.getOutputStream().close();
+				socket.close();
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
-	// void close() {
-
-	// }
+	void close() {
+		open = false;
+		try {
+			//System.out.println("clientInstance trying to close!!");
+			receiverRunnable.open = false;
+			receiver.join();
+			//Thread.currentThread().stop();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
 }

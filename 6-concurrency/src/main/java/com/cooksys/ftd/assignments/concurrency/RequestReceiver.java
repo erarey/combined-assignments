@@ -1,5 +1,6 @@
 package com.cooksys.ftd.assignments.concurrency;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
@@ -13,11 +14,14 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
 import com.cooksys.ftd.assignments.concurrency.model.message.Request;
+import com.cooksys.ftd.assignments.concurrency.model.message.RequestType;
 
 //TODO: make generic
 
 public class RequestReceiver implements Runnable {
 
+	public boolean open = true;
+	
 	private InputStream input = null;
 
 	private List<Request> deposit = null;
@@ -34,25 +38,20 @@ public class RequestReceiver implements Runnable {
 		try {
 			String classname = "request";
 
-			System.out.println("A receiver thread is active");
+			//System.out.println("A receiver thread is active");
 
 			InputStreamReader in = new InputStreamReader(input);
-			JAXBContext context = JAXBContext.newInstance(Request.class);
-
-			Unmarshaller unmarshaller = context.createUnmarshaller();
+			
 
 			Request latest = null;
 
-			StringWriter sw = new StringWriter();
+			//StringWriter sw = new StringWriter();
 
 			ArrayList<String> xmlObjectsFound = new ArrayList<String>();
 
-			int found = 0;
 
-			while (true) {
+			while (open == true) {
 
-				int leftB = 0;
-				int rightB = 0;
 				String s = "";
 
 				boolean rootNodeComplete = false;
@@ -63,52 +62,42 @@ public class RequestReceiver implements Runnable {
 
 					s += c;
 
-					// if (c == '<') {
-					// leftB++;
 					if (c == '>') {
-						// System.out.println("looking for Request end node");
-						// rightB++;
-						// if (leftB == rightB) {
+			
 						if (s.indexOf(("</" + classname + ">")) != -1) {
-							//System.out.println("found request end node");
 							int endOfRootNode = s.indexOf(("</" + classname + ">")) + classname.length() + 3;
-							System.out.println("*******" + s);
+							//System.out.println("*******" + s);
 							xmlObjectsFound.add(s.substring(s.indexOf("<?xml"), endOfRootNode));
 							s = "";
 							rootNodeComplete = true;
 						}
 					}
-					// }
-
 				}
 
-				// System.out.println(s);
-				// Thread.sleep(5000);
-				// System.out.println(s);
-				// s = sw.toString();
-				
-
 				while (!xmlObjectsFound.isEmpty()) {
-					 System.out.println("XMLObjectsFound size = " + xmlObjectsFound.size());
+					
+					JAXBContext context = JAXBContext.newInstance(Request.class);
+
+					Unmarshaller unmarshaller = context.createUnmarshaller();
+					
+					//System.out.println("XMLObjectsFound size = " + xmlObjectsFound.size());
 					latest = null;
 					String xmlS = xmlObjectsFound.remove(xmlObjectsFound.size()-1);
+					
 					if (xmlS != "") {
-						//System.out.println("trying to convert...");
-						//System.out.println(xmlS);
+						
 						StringReader tempStringReader = new StringReader(xmlS);
 						latest = (Request) unmarshaller.unmarshal(tempStringReader);
 						tempStringReader.close();
-						System.out.println("RequestReceiver got: ");
+						//System.out.println("RequestReceiver got: ");
 
 						if (latest != null) {
-							System.out.println(latest.getType().toString());
+							//System.out.println(latest.getType().toString());
 
-							// System.out.println("After receiving,
-							// input status is: ");
+							
 							synchronized(lock)
 							{
 								deposit.add(new Request(latest.getType()));
-							// s = "";
 								latest = null;
 							}
 
@@ -118,7 +107,18 @@ public class RequestReceiver implements Runnable {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			close();
+			try {
+				input.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 
+	}
+	void close()
+	{
+		open = false;
 	}
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.ListIterator;
 
 import com.cooksys.ftd.assignments.concurrency.model.config.ClientConfig;
@@ -14,72 +15,90 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class Client implements Runnable {
 
-	ArrayList<ClientInstance> clientInstances = new ArrayList<>();
+	ArrayList<Thread> clientInstances = new ArrayList<>();
+
+	ClientConfig config = null;
 
 	boolean open = true;
 
-	SpawnStrategy strat = SpawnStrategy.PARALLEL;
+	SpawnStrategy strat = null;
 
 	public Client(ClientConfig config) {
-		System.out.println("made Client manager");
-		try {
-			Thread.sleep(1500);
-
-			if (strat == SpawnStrategy.NONE) {
-				close();
-			}
-
-			else if (strat == SpawnStrategy.PARALLEL) {
-				System.out.println("trying parallel");
-				for (ClientInstanceConfig c : config.getInstances()) {
-
-					ClientInstance ci = new ClientInstance(c, new Socket(config.getHost(), config.getPort()));
-					System.out.println("client socket connected");
-					clientInstances.add(ci);
-
-					new Thread(ci).start();
-					System.out.println("clientInstance thread starting");
-				}
-			} else if (strat == SpawnStrategy.SEQUENTIAL) {
-
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		do {
-			ListIterator<ClientInstance> iter = clientInstances.listIterator();
-
-			while (iter.hasNext()) {
-				ClientInstance ci = iter.next();
-				//if (ci.requests.isEmpty()) {
-					//System.out
-						//	.println("trying to close a ClientInstance..." + clientInstances.size() + " will be left");
-					//try {
-						//ci.getSocket().close();
-				//	} catch (IOException e) {
-					//	e.printStackTrace();
-					//}
-					//iter.remove();
-				//}
-			}
-
-		} while (!clientInstances.isEmpty());
+		this.config = config;
+		this.strat = config.getSpawnStrategy();
 	}
 
 	@Override
 	public void run() {
-		while (open) {
-			if (strat == SpawnStrategy.PARALLEL) {
 
-				// if all threads are done, close()
-			} else if (strat == SpawnStrategy.SEQUENTIAL) {
-				// iterate clients, when head client is done, go next, when all
-				// done close()
+		List<ClientInstanceConfig> clientInstanceConfigs = config.getInstances();
+		System.out.println("found clientInstanceConfigs: " + clientInstanceConfigs.size());
+		int maxInstances = config.getMaxInstances();
+		int instanceCount = 0;
+
+		if (strat == SpawnStrategy.NONE) {
+			close();
+		}
+
+		else if (strat == SpawnStrategy.SEQUENTIAL) {
+			maxInstances = 1;
+		}
+
+		while (open == true) {
+			try {
+				Thread.sleep(100);
+
+				// Parallel, use maxInstances per config
+
+				if (maxInstances != -1) {
+					while (instanceCount < (maxInstances + 1)) {
+						instanceCount++;
+						for (int i = (instanceCount - 1); i < maxInstances && i < clientInstanceConfigs.size(); i++) {
+
+							ClientInstance ci = new ClientInstance(clientInstanceConfigs.get(i),
+									new Socket(config.getHost(), config.getPort()));
+
+							clientInstances.add(new Thread(ci));
+							clientInstances.get(clientInstances.size() - 1).start();
+						}
+					}
+				} else {
+					while (clientInstances.size() < clientInstanceConfigs.size() && instanceCount < (clientInstanceConfigs.size()+1)) {
+						System.out.println(clientInstances.size() + " OF " + clientInstanceConfigs.size());
+						instanceCount++;
+						ClientInstance ci = new ClientInstance(clientInstanceConfigs.get(clientInstances.size()),
+								new Socket(config.getHost(), config.getPort()));
+
+						clientInstances.add(new Thread(ci));
+						clientInstances.get(clientInstances.size() - 1).start();
+
+					}
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
+
+			ListIterator<Thread> iter = clientInstances.listIterator();
+
+			while (iter.hasNext()) {
+				Thread ci = iter.next();
+				//System.out.println("THREAD " + ci.isAlive());
+				if (!ci.isAlive()) {
+					//System.out.println("THREAD CLOSING");
+					iter.remove();
+				}
+			}
+
+			if (clientInstances.isEmpty()) {
+				close();
+			}
+			
 		}
 	}
 
 	void close() {
+		System.out.println("All client instances have finished, closing Client");
 		open = false;
 	}
 }

@@ -30,6 +30,9 @@ import com.cooksys.ftd.assignments.concurrency.model.message.Response;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class ClientHandler implements Runnable {
+	private RequestReceiver recieverRunnable;
+
+	private Thread receiver;
 
 	private Object lock = new Object();
 	private Socket socket = null;
@@ -44,8 +47,6 @@ public class ClientHandler implements Runnable {
 
 	public List<Response> unsentResponseSyncd = Collections.synchronizedList(new ArrayList<Response>());
 
-	// ArrayList<String> strCollect = new ArrayList<String>();
-
 	ClientHandler(Socket socket, ServerSocket ss) {
 		startTime = System.currentTimeMillis();
 		this.socket = socket;
@@ -57,26 +58,18 @@ public class ClientHandler implements Runnable {
 	public void run() {
 		try {
 
-			Thread receiver = new Thread(new RequestReceiver(socket.getInputStream(), unprocessedRequestsSyncd, lock));
+			recieverRunnable = new RequestReceiver(socket.getInputStream(), unprocessedRequestsSyncd, lock);
+
+			Thread receiver = new Thread(recieverRunnable);
 
 			receiver.start();
 
 			OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream());
 
-			
-
-			while (open) {
+			while (open == true) {
 				Thread.sleep(500);
-				// while (!unprocessedRequestsSyncd.isEmpty()) {
 
 				try {
-
-					// System.out.println("There are " +
-					// unprocessedRequestsSyncd.size() + " left to
-					// process.");
-
-					Response re = new Response();
-
 					List<Request> tempList = new ArrayList<Request>();
 
 					synchronized (lock) {
@@ -85,6 +78,8 @@ public class ClientHandler implements Runnable {
 					}
 
 					while (!tempList.isEmpty()) {
+						Response re = new Response();
+
 						JAXBContext context = JAXBContext.newInstance(Response.class);
 
 						Marshaller marshaller = context.createMarshaller();
@@ -94,57 +89,66 @@ public class ClientHandler implements Runnable {
 						Request rt = tempList.remove(tempList.size() - 1);
 
 						switch (rt.getType()) {
+
 						case IDENTITY:
-							re.setData("Received request for ID...");
+							re.setData("Server's IP is " + socket.getInetAddress() + " at port " + socket.getPort());
 							re.setType(RequestType.IDENTITY);
-							re.isSuccessful();
+							re.setSuccessful(true);
 							break;
 
 						case TIME:
-							re.setData("" + (System.currentTimeMillis() - startTime));
-							re.setType(RequestType.IDENTITY);
-							re.isSuccessful();
+							re.setData("You have been talking to client handler for "
+									+ (System.currentTimeMillis() - startTime) + " milliseconds");
+							re.setType(RequestType.TIME);
+							re.setSuccessful(true);
 							break;
 
 						case DONE:
-							re.setData("Closing down connection.");
+							re.setData("Bye!");
 							re.setType(RequestType.DONE);
-							re.isSuccessful();
-							close();
+							re.setSuccessful(true);
+							marshaller.marshal(re, sw);
+
+							sw.flush();
+
+							out.write(sw.toString());
+
+							out.flush();
+							//close();
 							break;
 						}
-
-						System.out.println("trying to write back: " + re.getData());
-
-						marshaller.marshal(re, sw);
-
-						sw.flush();
-
-						out.write(sw.toString());
 						
-						out.flush();
-						// Thread.sleep(config.getDelay());
+						if (re.getType() != RequestType.DONE) {
+							marshaller.marshal(re, sw);
+
+							sw.flush();
+
+							out.write(sw.toString());
+
+							out.flush();
+						}
 					}
 
-					// sw.close();
-
-					// System.out.println("client is waiting for
-					// response...");
-					// Thread.sleep(4000);
-					//
-
 				} catch (Exception e) {
-					System.out.println("JAXB failed (inner exception)");
+					e.printStackTrace();
+					// System.out.println("JAXB failed (inner exception)");
 				}
 			}
-			// }
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
+			close();
 			try {
-				socket.close();
-			} catch (IOException e) {
-				System.out.println("Failed to close a ClientHandler's socket");
+				// socket.getOutputStream().close();
+				//socket.close();
+				recieverRunnable.open = false;
+				if (receiver.isAlive())
+					receiver.join();
+				// Thread.currentThread().join();
+			} catch (InterruptedException e) {
+				// System.out.println("Failed to close a ClientHandler's
+				// socket");
 				e.printStackTrace();
 			}
 		}

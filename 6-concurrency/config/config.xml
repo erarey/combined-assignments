@@ -6,12 +6,26 @@
     <client disabled="false">
         <port>8080</port>
         <host>localhost</host>
-        <max-instances>-1</max-instances>
+        <max-instances>2</max-instances>
         <spawn-strategy>PARALLEL</spawn-strategy>
         <instances>
             <instance delay="500">
                 <request>IDENTITY</request>
                 <request>TIME</request>
+                <request>TIME</request>
+                <request>DONE</request>
+            </instance>
+            <instance delay="500">
+                <request>IDENTITY</request>
+                <request>TIME</request>
+                <request>TIME</request>
+                <request>DONE</request>
+            </instance>
+            <instance delay="500">
+                <request>IDENTITY</request>
+                <request>TIME</request>
+                <request>TIME</request>
+                <request>DONE</request>
             </instance>
         </instances>
     </client>
